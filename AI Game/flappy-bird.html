@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Bird Game</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #70c5ce;
+            font-family: Arial, sans-serif;
+            position: relative;
+        }
+        canvas {
+            border: 2px solid #333;
+            background-color: #cce5ff;
+            display: none;
+        }
+        #startScreen, #gameOverScreen {
+            position: absolute;
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+        }
+        #startScreen button, #gameOverScreen button {
+            padding: 10px 20px;
+            font-size: 18px;
+            margin-top: 20px;
+            cursor: pointer;
+            border: none;
+            background-color: #28a745;
+            color: white;
+            border-radius: 5px;
+        }
+        #gameOverScreen {
+            display: none;
+        }
+        #returnLink {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 16px;
+            color: #fff;
+            text-decoration: none;
+            background-color: #333;
+            padding: 8px 15px;
+            border-radius: 5px;
+        }
+        #returnLink:hover {
+            background-color: #555;
+        }
+    </style>
+</head>
+<body>
+    <a id="returnLink" href="../Final Project/startbootstrap-clean-blog-gh-pages/index.html">Return to Resumé</a> <!-- Return Link -->
+
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+
+    <div id="startScreen">
+        <h1>Flappy Bird Game</h1>
+        <button onclick="startGame()">Start Game</button>
+    </div>
+
+    <div id="gameOverScreen">
+        <h1>Game Over!</h1>
+        <p id="finalScore"></p>
+        <button onclick="startGame()">Try Again</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game settings
+        const gravity = 0.5;
+        const birdJump = -8;
+        const pipeWidth = 50;
+        const pipeGap = 200;
+
+        // Game variables
+        let bird;
+        let pipes;
+        let score;
+        let gameRunning;
+
+        function initializeGame() {
+            bird = { x: 50, y: 300, width: 30, height: 30, velocity: 0 };
+            pipes = [];
+            score = 0;
+            gameRunning = true;
+            createPipe();
+        }
+
+        function startGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameOverScreen').style.display = 'none';
+            canvas.style.display = 'block';
+            initializeGame();
+            gameLoop();
+        }
+
+        function createPipe() {
+            const pipeHeight = Math.floor(Math.random() * (canvas.height - pipeGap - 100)) + 50;
+            pipes.push({
+                x: canvas.width,
+                y: pipeHeight
+            });
+        }
+
+        function drawBird() {
+            ctx.fillStyle = 'red';
+            ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
+        }
+
+        function drawPipes() {
+            ctx.fillStyle = 'green';
+            pipes.forEach(pipe => {
+                // Top pipe
+                ctx.fillRect(pipe.x, 0, pipeWidth, pipe.y);
+
+                // Bottom pipe
+                ctx.fillRect(pipe.x, pipe.y + pipeGap, pipeWidth, canvas.height - pipe.y - pipeGap);
+            });
+        }
+
+        function drawScore() {
+            ctx.fillStyle = '#000';
+            ctx.font = '24px Arial';
+            ctx.fillText(`Score: ${score}`, 10, 30);
+        }
+
+        function updateBird() {
+            bird.velocity += gravity;
+            bird.y += bird.velocity;
+
+            if (bird.y + bird.height > canvas.height || bird.y < 0) {
+                gameOver();
+            }
+        }
+
+        function updatePipes() {
+            pipes.forEach(pipe => {
+                pipe.x -= 3;
+
+                // Check for collisions
+                if (
+                    bird.x < pipe.x + pipeWidth && bird.x + bird.width > pipe.x &&
+                    (bird.y < pipe.y || bird.y + bird.height > pipe.y + pipeGap)
+                ) {
+                    gameOver();
+                }
+
+                // Increase score when pipe passes
+                if (pipe.x + pipeWidth < bird.x && !pipe.passed) {
+                    score++;
+                    pipe.passed = true;
+                }
+            });
+
+            // Remove pipes that are off screen
+            pipes = pipes.filter(pipe => pipe.x + pipeWidth > 0);
+
+            // Add new pipe if needed
+            if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width / 2) {
+                createPipe();
+            }
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            document.getElementById('finalScore').innerText = `Final Score: ${score}`;
+            document.getElementById('gameOverScreen').style.display = 'block';
+            canvas.style.display = 'none';
+        }
+
+        function gameLoop() {
+            if (gameRunning) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawBird();
+                drawPipes();
+                drawScore();
+                updateBird();
+                updatePipes();
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        document.addEventListener('keydown', function (event) {
+            if ((event.key === ' ' || event.key === 'ArrowUp') && gameRunning) {
+                bird.velocity = birdJump;
+            }
+        });
+    </script>
+</body>
+</html>
